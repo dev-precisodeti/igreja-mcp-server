@@ -1,0 +1,61 @@
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+model Igreja {
+  id        String   @id @default(uuid())
+  nome      String
+  cnpj      String?  @unique
+  ativo     Boolean  @default(true)
+  criado_em DateTime @default(now())
+
+  redes     Rede[]
+  membros   Membro[]
+}
+
+model Rede {
+  id        String   @id @default(uuid())
+  igreja_id String
+  nome      String
+  criado_em DateTime @default(now())
+
+  igreja    Igreja   @relation(fields: [igreja_id], references: [id], onDelete: Cascade)
+  membros   Membro[]
+
+  @@index([igreja_id])
+}
+
+model Membro {
+  id                 String    @id @default(uuid())
+  igreja_id          String
+  rede_id            String
+
+  cpf                String    @unique
+  nome               String
+  sobrenome          String
+  telefone_whatsapp  String
+
+  termo_lgpd_aceite  Boolean   @default(false)
+  data_aceite_lgpd   DateTime?
+  versao_termo_lgpd  String?
+  revogado_lgpd_em   DateTime?
+  dados_anonimizados Boolean   @default(false)
+
+  foto_perfil_url    String?
+  biometria_facial   Unsupported("vector(768)")?
+
+  igreja             Igreja    @relation(fields: [igreja_id], references: [id], onDelete: Restrict)
+  rede               Rede      @relation(fields: [rede_id], references: [id], onDelete: Restrict)
+  criado_em          DateTime  @default(now())
+  atualizado_em      DateTime  @updatedAt
+
+  @@index([igreja_id])
+  @@index([rede_id])
+}
